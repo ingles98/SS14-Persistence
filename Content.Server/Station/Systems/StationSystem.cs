@@ -1,5 +1,6 @@
 using System.Linq;
 using Content.Server.Chat.Systems;
+using Content.Server.CrewRecords.Systems;
 using Content.Server.GameTicking;
 using Content.Server.Station.Components;
 using Content.Server.Station.Events;
@@ -33,6 +34,8 @@ public sealed partial class StationSystem : SharedStationSystem
     [Dependency] private readonly MetaDataSystem _metaData = default!;
     [Dependency] private readonly PvsOverrideSystem _pvsOverride = default!;
     [Dependency] private readonly EntityManager _entMan = default!;
+    [Dependency] private readonly CrewMetaRecordsSystem _metaRecords = default!;
+
     private ISawmill _sawmill = default!;
 
     private EntityQuery<MapGridComponent> _gridQuery;
@@ -136,6 +139,13 @@ public sealed partial class StationSystem : SharedStationSystem
                     }
                 }
                 if(success) component.UID = tryUID;
+            }
+        }
+        if(_metaRecords.MetaRecords != null)
+        {
+            if(!_metaRecords.MetaRecords.Stations.ContainsKey(component.UID))
+            {
+                _metaRecords.MetaRecords.Stations.Add(component.UID, uid);
             }
         }
     }

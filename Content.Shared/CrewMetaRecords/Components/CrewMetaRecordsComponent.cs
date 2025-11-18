@@ -10,7 +10,9 @@ public sealed partial class CrewMetaRecordsComponent : Component
     [DataField]
     [AutoNetworkedField]
     public Dictionary<string, CrewMetaRecord> CrewMetaRecords { get; set; } = new();
-
+    [DataField]
+    [AutoNetworkedField]
+    public Dictionary<int, EntityUid> Stations { get; set; } = new();
     public bool TryGetRecord(string name, out CrewMetaRecord? record)
     {
         if (CrewMetaRecords.TryGetValue(name, out var currRecord))
