@@ -234,22 +234,6 @@ namespace Content.Server.Cargo.Systems
                 order.Approved = true;
                 _audio.PlayPvs(ApproveSound, uid);
 
-                if (!_emag.CheckFlag(uid, EmagType.Interaction))
-                {
-                    var tryGetIdentityShortInfoEvent = new TryGetIdentityShortInfoEvent(uid, player);
-                    RaiseLocalEvent(tryGetIdentityShortInfoEvent);
-                    order.SetApproverData(tryGetIdentityShortInfoEvent.Title);
-
-                    var message = Loc.GetString("cargo-console-unlock-approved-order-broadcast",
-                        ("productName", Loc.GetString(order.ProductName)),
-                        ("orderAmount", order.OrderQuantity),
-                        ("approver", order.Approver ?? string.Empty),
-                        ("cost", cost));
-                    _radio.SendRadioMessage(uid, message, account.RadioChannel, uid, escapeMarkup: false);
-                    if (CargoOrderConsoleComponent.BaseAnnouncementChannel != account.RadioChannel)
-                        _radio.SendRadioMessage(uid, message, CargoOrderConsoleComponent.BaseAnnouncementChannel, uid, escapeMarkup: false);
-                }
-
                 ConsolePopup(args.Actor, Loc.GetString("cargo-console-trade-station", ("destination", MetaData(ev.FulfillmentEntity.Value).EntityName)));
 
                 // Log order approval
@@ -378,7 +362,7 @@ namespace Content.Server.Cargo.Systems
             
         }
 
-        private EntityUid? TryFulfillOrder(Entity<StationDataComponent> stationData, ProtoId<CargoAccountPrototype> account, CargoOrderData order, StationCargoOrderDatabaseComponent orderDatabase)
+        private EntityUid? TryFulfillOrder(Entity<StationDataComponent> stationData, ProtoId<CargoAccountPrototype> account, CargoOrderData order, StationCargoOrderDatabaseComponent orderDatabase, string? personalAccount = null)
         {
             // No slots at the trade station
             _listEnts.Clear();
@@ -744,7 +728,7 @@ namespace Content.Server.Cargo.Systems
         /// <summary>
         /// Fulfills the specified cargo order and spawns paper attached to it.
         /// </summary>
-        private bool FulfillOrder(CargoOrderData order, ProtoId<CargoAccountPrototype> account, EntityCoordinates spawn, string? paperProto)
+        private bool FulfillOrder(CargoOrderData order, ProtoId<CargoAccountPrototype> account, EntityCoordinates spawn, string? paperProto, string? personalAccount = null)
         {
             // Create the item itself
             var item = Spawn(order.ProductId, spawn);
@@ -761,6 +745,16 @@ namespace Content.Server.Cargo.Systems
                 _metaSystem.SetEntityName(printed, val);
 
                 var accountProto = _protoMan.Index(account);
+                var paccount = Loc.GetString(accountProto.Name);
+                var paccountcode = Loc.GetString(accountProto.Code);
+
+                if (personalAccount != null)
+                {
+                    paccount = personalAccount;
+                    paccountcode = "[YOU]";
+
+                }
+
                 _paperSystem.SetContent((printed, paper),
                     Loc.GetString(
                         "cargo-console-paper-print-text",
@@ -769,8 +763,8 @@ namespace Content.Server.Cargo.Systems
                         ("orderQuantity", order.OrderQuantity),
                         ("requester", order.Requester),
                         ("reason", string.IsNullOrWhiteSpace(order.Reason) ? Loc.GetString("cargo-console-paper-reason-default") : order.Reason),
-                        ("account", Loc.GetString(accountProto.Name)),
-                        ("accountcode", Loc.GetString(accountProto.Code)),
+                        ("account", paccount),
+                        ("accountcode", paccountcode),
                         ("approver", string.IsNullOrWhiteSpace(order.Approver) ? Loc.GetString("cargo-console-paper-approver-default") : order.Approver)));
 
                 // attempt to attach the label to the item

@@ -114,7 +114,7 @@ namespace Content.Server.GameTicking
                     else
                     {
                         finalSaveFound = true;
-                        path = new ResPath($"current{indof+1}");
+                        path = new ResPath($"current{indof}");
                     }
                 }
             }
@@ -878,6 +878,7 @@ namespace Content.Server.GameTicking
                 if (_timeToNextSave > TimeSpan.FromMinutes(_cfg.GetCVar(CCVars.AutoSaveInterval)))
                 {
                     _timeToNextSave = TimeSpan.Zero;
+                    warnings = 3;
                     SaveMaps();
                     SendServerMessage("Game Saved.");
                 }
