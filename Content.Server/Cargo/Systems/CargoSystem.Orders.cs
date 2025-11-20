@@ -220,7 +220,7 @@ namespace Content.Server.Cargo.Systems
 
                 if (!ev.Handled)
                 {
-                    ev.FulfillmentEntity = TryFulfillOrder((station.Value, stationData), order.Account, order, orderDatabase);
+                    ev.FulfillmentEntity = TryFulfillOrder((station.Value, stationData), order.Account, order, orderDatabase, Name(args.Actor));
 
                     if (ev.FulfillmentEntity == null)
                     {
@@ -390,7 +390,7 @@ namespace Content.Server.Cargo.Systems
                     {
                         var coordinates = new EntityCoordinates(trade, pad.Transform.LocalPosition);
 
-                        if (FulfillOrder(order, account, coordinates, orderDatabase.PrinterOutput))
+                        if (FulfillOrder(order, account, coordinates, orderDatabase.PrinterOutput, personalAccount))
                         {
                             tradeDestination = trade;
                             order.NumDispatched++;
