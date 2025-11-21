@@ -244,7 +244,7 @@ namespace Content.Client.Lobby.UI
                 var e = Sigils.ElementAt(args.Id);
                 SigilTitle.Text = e.Key;
                 SigilLabel.Text = e.Value;
-                MotiveButton.SelectId(args.Id);
+                SigilButton.SelectId(args.Id);
             };
             SigilButton.Select(0);
             e = Sigils.ElementAt(0);
@@ -1284,7 +1284,10 @@ namespace Content.Client.Lobby.UI
 
         private void RandomizeEverything()
         {
-            Profile = HumanoidCharacterProfile.Random();
+            if(Profile != null)
+                 Profile = HumanoidCharacterProfile.RandomWithSpecies(Profile.Species);
+            else
+                Profile = HumanoidCharacterProfile.Random();
             SetProfile(Profile, CharacterSlot);
             SetDirty();
         }
