@@ -48,7 +48,7 @@ public sealed class CargoPalletConsoleBoundUserInterface : BoundUserInterface
             return;
 
         _menu?.SetEnabled(palletState.Enabled);
-        _menu?.SetAppraisal(palletState.Appraisal);
+        _menu?.SetAppraisal(palletState.Appraisal, palletState.Tax, palletState.CashMode);
         _menu?.SetCount(palletState.Count);
         _menu?.SetMoneyMode(palletState.CashMode);
     }

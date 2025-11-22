@@ -8,14 +8,16 @@ using Content.Shared.Cargo.Components;
 using Content.Shared.Cargo.Events;
 using Content.Shared.Cargo.Prototypes;
 using Content.Shared.CCVar;
+using Content.Shared.Coordinates;
 using Content.Shared.Hands.Components;
 using Content.Shared.Stacks;
+using Content.Shared.Station.Components;
 using Robust.Server.GameObjects;
 using Robust.Shared.Audio;
 using Robust.Shared.Physics;
 using Robust.Shared.Prototypes;
 using System.Linq;
-using Content.Shared.Coordinates;
+using YamlDotNet.Core.Tokens;
 
 namespace Content.Server.Cargo.Systems;
 
@@ -46,18 +48,28 @@ public sealed partial class CargoSystem
     #region Console
     private void UpdatePalletConsoleInterface(EntityUid uid, CargoPalletConsoleComponent comp)
     {
+
+        
         if (Transform(uid).GridUid is not { } gridUid)
         {
             _uiSystem.SetUiState(uid,
                 CargoPalletConsoleUiKey.Sale,
-                new CargoPalletConsoleInterfaceState(0, 0, false, comp.CashMode));
+                new CargoPalletConsoleInterfaceState(0, 0, false, comp.CashMode, 0));
             return;
         }
+        if (_station.GetOwningStation(uid) is not { } station ||
+        !TryComp<StationDataComponent>(station, out var sD))
+        {
+            return;
+        }
+        var tax = sD.ExportTax;
         GetPalletGoods(gridUid, out var toSell, out var goods);
         var totalAmount = goods.Sum(t => t.Item3);
+
+
         _uiSystem.SetUiState(uid,
             CargoPalletConsoleUiKey.Sale,
-            new CargoPalletConsoleInterfaceState((int) totalAmount, toSell.Count, true, comp.CashMode));
+            new CargoPalletConsoleInterfaceState((int) totalAmount, toSell.Count, true, comp.CashMode, tax));
     }
 
     private void OnPalletUIOpen(EntityUid uid, CargoPalletConsoleComponent component, BoundUIOpenedEvent args)
@@ -245,7 +257,7 @@ public sealed partial class CargoSystem
         {
             _uiSystem.SetUiState(uid,
                 CargoPalletConsoleUiKey.Sale,
-                new CargoPalletConsoleInterfaceState(0, 0, false, component.CashMode));
+                new CargoPalletConsoleInterfaceState(0, 0, false, component.CashMode, 0));
             return;
         }
 
@@ -253,6 +265,10 @@ public sealed partial class CargoSystem
             return;
         if(component.CashMode)
         {
+            TryComp<StationDataComponent>(station, out var sD);
+
+            var tax = 0;
+            if(sD != null) tax = sD.ExportTax;
             var player = args.Actor;
             //spawn the cash stack of whatever cash type the ATM is configured to.
             double total = 0;
@@ -260,10 +276,23 @@ public sealed partial class CargoSystem
             {
                 total += value;
             }
+            float taxmult = (float)tax / 100f;
+            var taxpaid = (float)total * taxmult;
+            var taxPaidInt = (int)Math.Round(taxpaid);
+            total -= taxPaidInt;
+
             var stackPrototype = _protoMan.Index<StackPrototype>("Credit");
             var cashStack = _stack.SpawnAtPosition((int)Math.Round(total), stackPrototype, player.ToCoordinates());
             if (!_hands.TryPickupAnyHand(player, cashStack))
                 _transform.SetLocalRotation(cashStack, Angle.Zero); // Orient these to grid north instead of map north
+            if(taxPaidInt > 0)
+            {
+                var baseDistribution = CreateAccountDistribution((station, bankAccount));
+                Dictionary<ProtoId<CargoAccountPrototype>, double> distribution;
+                distribution = baseDistribution;
+                UpdateBankAccount((station, bankAccount), taxPaidInt, distribution, false);
+                Dirty(station, bankAccount);
+            }
         }
         else
         {

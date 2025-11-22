@@ -46,6 +46,7 @@ namespace Content.Client.Cargo.UI
         private string? _category;
         private bool _PersonalMode = false;
 
+        private int _tax = 0;
         public List<ProtoId<CargoProductPrototype>> ProductCatalogue = new();
         
         public CargoConsoleMenu(EntityUid owner, IEntityManager entMan, IPrototypeManager protoManager, SpriteSystem spriteSystem)
@@ -161,12 +162,17 @@ namespace Content.Client.Cargo.UI
                     search.Length != 0 && prototype.Description.ToLowerInvariant().Contains(search) ||
                     search.Length == 0 && _category != null && Loc.GetString(prototype.Category).Equals(_category))
                 {
+                    var cost = prototype.Cost;
+                    if(_PersonalMode)
+                    {
+                        cost += (int)Math.Round((float)cost * ((float)_tax / 100f));
+                    }
                     var button = new CargoProductRow
                     {
                         Product = prototype,
                         ProductName = { Text = prototype.Name },
                         MainButton = { ToolTip = prototype.Description },
-                        PointCost = { Text = Loc.GetString("cargo-console-menu-points-amount", ("amount", prototype.Cost.ToString())) },
+                        PointCost = { Text = Loc.GetString("cargo-console-menu-points-amount", ("amount", cost.ToString())) },
                         Icon = { Texture = _spriteSystem.Frame0(prototype.Icon) },
                     };
                     button.MainButton.OnPressed += args =>
@@ -221,9 +227,13 @@ namespace Content.Client.Cargo.UI
                     continue;
 
                 var product = _protoManager.Index<EntityPrototype>(order.ProductId);
+                var cost = order.Price;
+                if (_PersonalMode)
+                {
+                    cost += (int)Math.Round((float)cost * ((float)_tax / 100f));
+                }
                 var productName = product.Name;
                 var account = _protoManager.Index(order.Account);
-
                 var row = new CargoOrderRow
                 {
                     Order = order,
@@ -242,6 +252,10 @@ namespace Content.Client.Cargo.UI
                     {
                         Text = Loc.GetString("cargo-console-menu-order-reason-description",
                                                         ("reason", order.Reason))
+                    },
+                    Cost =
+                    {
+                        Text = $"${cost}"
                     }
                 };
                 row.Cancel.OnPressed += (args) => { OnOrderCanceled?.Invoke(args); };
@@ -278,10 +292,11 @@ namespace Content.Client.Cargo.UI
             }
         }
 
-        public void UpdateStation(EntityUid station, bool personalMode)
+        public void UpdateStation(EntityUid station, bool personalMode, int tax)
         {
             _station = station;
             _PersonalMode = personalMode;
+            _tax = tax;
             if(personalMode)
             {
                 AccountNameLabel.Text = Loc.GetString("cargo-console-menu-account-name-format",
@@ -289,7 +304,8 @@ namespace Content.Client.Cargo.UI
                     ("name", "Personal Account"),
                     ("code", "YOU"));
                 AccountTypeMode.Text = "Station";
-                
+                TaxContainer.Visible = true;
+                TaxLabel.Text = $"{_tax}%";
             }
             else if(!personalMode)
             {
@@ -302,6 +318,7 @@ namespace Content.Client.Cargo.UI
                         ("code", Loc.GetString(accountProto.Code)));
                 }
                 AccountTypeMode.Text = "Personal";
+                TaxContainer.Visible = false;
             }
             
         }

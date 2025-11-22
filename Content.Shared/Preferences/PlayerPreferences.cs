@@ -16,9 +16,12 @@ namespace Content.Shared.Preferences
     {
         private Dictionary<int, ICharacterProfile> _characters;
 
-        public PlayerPreferences(IEnumerable<KeyValuePair<int, ICharacterProfile>> characters, int selectedCharacterIndex, Color adminOOCColor, List<ProtoId<ConstructionPrototype>> constructionFavorites)
+        public PlayerPreferences(IEnumerable<KeyValuePair<int, ICharacterProfile>>? characters, int selectedCharacterIndex, Color adminOOCColor, List<ProtoId<ConstructionPrototype>> constructionFavorites)
         {
-            _characters = new Dictionary<int, ICharacterProfile>(characters);
+            if(characters != null)
+                _characters = new Dictionary<int, ICharacterProfile>(characters);
+            else
+                _characters = new Dictionary<int, ICharacterProfile>();
             SelectedCharacterIndex = selectedCharacterIndex;
             AdminOOCColor = adminOOCColor;
             ConstructionFavorites = constructionFavorites;

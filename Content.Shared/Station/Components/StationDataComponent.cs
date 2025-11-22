@@ -33,6 +33,13 @@ public sealed partial class StationDataComponent : Component
     [DataField, AutoNetworkedField]
     public string? StationName;
 
+    [DataField, AutoNetworkedField]
+    public int ImportTax = 0;
+
+    [DataField, AutoNetworkedField]
+    public int ExportTax = 0;
+
+
     public bool IsOwner(string owner)
     {
         if (Owners.Contains(owner)) return true;

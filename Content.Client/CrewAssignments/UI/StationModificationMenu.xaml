@@ -88,6 +88,24 @@
                         Access="Public"
                         Text="Delete"/>
                 </BoxContainer>
+                <Control MinHeight="15"/>
+                <BoxContainer Orientation="Horizontal">
+                    <Label Text="Import Tax:"
+                        StyleClasses="LabelKeyText" />
+                    <Control HorizontalExpand="True"/>
+                    <SpinBox Name="ITaxSpinBox" Access="Public" MinWidth="100" Value="0"/>
+                    <Button Name="ITaxConfirm" Access="Public"
+                        Text="Save"/>
+                </BoxContainer>
+                <Control MinHeight="15"/>
+                <BoxContainer Orientation="Horizontal">
+                    <Label Text="Export Tax:"
+                        StyleClasses="LabelKeyText" />
+                    <Control HorizontalExpand="True"/>
+                    <SpinBox Name="ETaxSpinBox" Access="Public" MinWidth="100" Value="0"/>
+                    <Button Name="ETaxConfirm" Access="Public"
+                        Text="Save"/>
+                </BoxContainer>
             </BoxContainer>
             <!-- Assignment Management -->
             <BoxContainer Orientation="Vertical" Margin="15">

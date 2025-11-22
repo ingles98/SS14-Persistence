@@ -1,4 +1,4 @@
-﻿- files: ["thunderdome.ogg"]
+- files: ["thunderdome.ogg"]
   license: "CC-BY-NC-SA-3.0"
   copyright: "-Sector11 by MashedByMachines. Converted from MP3 to OGG."
   source: "https://www.newgrounds.com/audio/listen/312622"
@@ -35,6 +35,11 @@
   license: "CC-BY-NC-SA-3.0"
   copyright: "Singuloose by Janis Schiedková. Converted from MP3 to OGG."
   source: "https://soundcloud.com/js_m/singuloose"
+
+- files: ["ambient-space-arpeggio.ogg"]
+  license: "Custom"
+  copyright: "Made by Universfield on Pixabay."
+  source: "https://pixabay.com/music/ambient-ambient-space-arpeggio-350710/"
 
 - files: ["title2.ogg"]
   license: "Custom"

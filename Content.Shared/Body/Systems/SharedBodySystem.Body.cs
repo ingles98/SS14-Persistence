@@ -312,8 +312,8 @@ public partial class SharedBodySystem
                 playAudio: false, launchGibs:true, launchDirection:splatDirection, launchImpulse: GibletLaunchImpulse * splatModifier,
                 launchImpulseVariance:GibletLaunchImpulseVariance, launchCone: splatCone);
 
-            if (!gibOrgans)
-                continue;
+        //    if (!gibOrgans)
+        //        continue;
 
             foreach (var organ in GetPartOrgans(part.Id, part.Component))
             {

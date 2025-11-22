@@ -106,7 +106,8 @@ public sealed class CritMobActionsSystem : EntitySystem
             "Give up on your character being revived and return to the Lobby to make a new character. Your character will be permanently deleted.",
             (string lastWords) =>
             {
-                if (!_mobState.IsDead(uid))
+                TryComp<MobStateComponent>(uid, out var state);
+                if (state != null && !_mobState.IsDead(uid))
                     return;
 
                 if (actor.PlayerSession.AttachedEntity != uid)

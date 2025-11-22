@@ -1,4 +1,4 @@
-﻿<PanelContainer xmlns="https://spacestation14.io"
+<PanelContainer xmlns="https://spacestation14.io"
                 HorizontalExpand="True"
                 Margin="0 1">
     <BoxContainer Orientation="Horizontal"
@@ -15,11 +15,21 @@
                    Access="Public"
                    HorizontalExpand="True"
                    StyleClasses="LabelSubText" />
-            <Label Name="Description"
+            <BoxContainer Orientation="Horizontal">
+                <Label Name="Description"
                    Access="Public"
                    HorizontalExpand="True"
                    StyleClasses="LabelSubText"
                    ClipText="True" />
+                <Control HorizontalExpand="True" />
+                <Label Name="Cost" Text="$5000"
+                   Access="Public"
+                   HorizontalExpand="True"
+                   StyleClasses="LabelSubText"
+                   ClipText="True" />
+                
+            </BoxContainer>
+            
         </BoxContainer>
         <Button Name="Approve"
                 Access="Public"

@@ -58,7 +58,9 @@ namespace Content.Server.Database
             if (prefs is null)
                 return null;
 
-            var maxSlot = prefs.Profiles.Max(p => p.Slot) + 1;
+            var maxSlot = 1;
+            if(prefs.Profiles.Count > 0)
+                maxSlot = prefs.Profiles.Max(p => p.Slot) + 1;
             var profiles = new Dictionary<int, ICharacterProfile>(maxSlot);
             foreach (var profile in prefs.Profiles)
             {
@@ -151,13 +153,13 @@ namespace Content.Server.Database
                 ConstructionFavorites = [],
             };
 
-            prefs.Profiles.Add(profile);
+        //    prefs.Profiles.Add(profile);
 
             db.DbContext.Preference.Add(prefs);
 
             await db.DbContext.SaveChangesAsync();
 
-            return new PlayerPreferences(new[] { new KeyValuePair<int, ICharacterProfile>(0, defaultProfile) }, 0, Color.FromHex(prefs.AdminOOCColor), []);
+            return new PlayerPreferences(null, 0, Color.FromHex(prefs.AdminOOCColor), []);
         }
 
         public async Task DeleteSlotAndSetSelectedIndex(NetUserId userId, int deleteSlot, int newSlot)

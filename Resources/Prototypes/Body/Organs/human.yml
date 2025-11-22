@@ -63,16 +63,12 @@
         reagents:
         - ReagentId: GreyMatter
           Quantity: 5
-  - type: FlavorProfile
-    flavors:
-      - people
-  - type: FoodSequenceElement
-    entries:
-      Burger: Brain
-      Taco: Brain
   - type: Item
     size: Small
     heldPrefix: brain
+  - type: Actions
+  - type: ActionsContainer
+  - type: MobStateActions
 
 - type: entity
   id: OrganHumanEyes

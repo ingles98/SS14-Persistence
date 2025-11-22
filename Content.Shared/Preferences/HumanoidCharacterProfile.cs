@@ -215,11 +215,7 @@ namespace Content.Shared.Preferences
             var prototypeManager = IoCManager.Resolve<IPrototypeManager>();
             var random = IoCManager.Resolve<IRobustRandom>();
 
-            var species = random.Pick(prototypeManager
-                .EnumeratePrototypes<SpeciesPrototype>()
-                .Where(x => ignoredSpecies == null ? x.RoundStart : x.RoundStart && !ignoredSpecies.Contains(x.ID))
-                .ToArray()
-            ).ID;
+            var species = "Human";
 
             return RandomWithSpecies(species);
         }

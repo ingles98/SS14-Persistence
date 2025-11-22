@@ -199,6 +199,10 @@ namespace Content.Server.Cargo.Systems
                 }
 
                 var cost = order.Price * order.OrderQuantity;
+                var taxRate = stationData.ImportTax;
+                var taxPaid = (int)Math.Round((float)cost * ((float)taxRate / 100f));
+                cost += taxPaid;
+
                 int accountBalance = 0;
                 _bank.TryGetBalance(args.Actor, out accountBalance);
 
@@ -216,7 +220,7 @@ namespace Content.Server.Cargo.Systems
 
                 if (!ev.Handled)
                 {
-                    ev.FulfillmentEntity = TryFulfillOrder((station.Value, stationData), order.Account, order, orderDatabase);
+                    ev.FulfillmentEntity = TryFulfillOrder((station.Value, stationData), order.Account, order, orderDatabase, Name(args.Actor));
 
                     if (ev.FulfillmentEntity == null)
                     {
@@ -230,6 +234,10 @@ namespace Content.Server.Cargo.Systems
                     ConsolePopup(args.Actor, "Withdraw error!");
                     PlayDenySound(uid, component);
                     return;
+                }
+                if(taxPaid > 0)
+                {
+                    UpdateBankAccount((station.Value, bank), taxPaid, order.Account);
                 }
                 order.Approved = true;
                 _audio.PlayPvs(ApproveSound, uid);
@@ -382,7 +390,7 @@ namespace Content.Server.Cargo.Systems
                     {
                         var coordinates = new EntityCoordinates(trade, pad.Transform.LocalPosition);
 
-                        if (FulfillOrder(order, account, coordinates, orderDatabase.PrinterOutput))
+                        if (FulfillOrder(order, account, coordinates, orderDatabase.PrinterOutput, personalAccount))
                         {
                             tradeDestination = trade;
                             order.NumDispatched++;
@@ -527,6 +535,8 @@ namespace Content.Server.Cargo.Systems
 
             if (!TryComp<StationCargoOrderDatabaseComponent>(station, out var orderDatabase))
                 return;
+            if (!TryComp<StationDataComponent>(station, out var sD))
+                return;
 
             if (_uiSystem.HasUi(consoleUid, CargoConsoleUiKey.Orders))
             {
@@ -539,7 +549,8 @@ namespace Content.Server.Cargo.Systems
                     GetNetEntity(station.Value),
                     RelevantOrders((station!.Value, orderDatabase), (consoleUid, console)),
                     GetAvailableProducts((consoleUid, console)),
-                    console.PersonalAccountMode
+                    console.PersonalAccountMode,
+                    sD.ImportTax
                 ));
             }
         }

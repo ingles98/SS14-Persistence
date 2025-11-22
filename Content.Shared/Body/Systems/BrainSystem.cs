@@ -1,4 +1,5 @@
-﻿using Content.Shared.Body.Components;
+using Content.Shared.Actions;
+using Content.Shared.Body.Components;
 using Content.Shared.Body.Events;
 using Content.Shared.Ghost;
 using Content.Shared.Mind;
@@ -11,7 +12,7 @@ namespace Content.Shared.Body.Systems;
 public sealed class BrainSystem : EntitySystem
 {
     [Dependency] private readonly SharedMindSystem _mindSystem = default!;
-
+    [Dependency] private readonly SharedActionsSystem _actions = default!;
     public override void Initialize()
     {
         base.Initialize();
@@ -19,6 +20,7 @@ public sealed class BrainSystem : EntitySystem
         SubscribeLocalEvent<BrainComponent, OrganAddedToBodyEvent>((uid, _, args) => HandleMind(args.Body, uid));
         SubscribeLocalEvent<BrainComponent, OrganRemovedFromBodyEvent>((uid, _, args) => HandleMind(uid, args.OldBody));
         SubscribeLocalEvent<BrainComponent, PointAttemptEvent>(OnPointAttempt);
+        SubscribeLocalEvent<BrainComponent, ComponentStartup>(OnCompStartup);
     }
 
     private void HandleMind(EntityUid newEntity, EntityUid oldEntity)
@@ -41,5 +43,10 @@ public sealed class BrainSystem : EntitySystem
     private void OnPointAttempt(Entity<BrainComponent> ent, ref PointAttemptEvent args)
     {
         args.Cancel();
+    }
+
+    private void OnCompStartup(Entity<BrainComponent> ent, ref ComponentStartup args)
+    {
+        _actions.AddAction(ent, "ActionAcceptDeath");
     }
 }

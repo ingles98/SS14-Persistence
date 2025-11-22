@@ -19,6 +19,12 @@
                    StyleClasses="LabelKeyText" />
             <RichTextLabel Name="PointsLabel"
                    Text="$0" />
+            <Control HorizontalExpand="True"/>
+            <BoxContainer Name="TaxContainer" Orientation="Horizontal">
+                <Label Text="Tax Rate: "
+                   StyleClasses="LabelKeyText" />
+                <RichTextLabel Name="TaxLabel" Text="10%" />
+            </BoxContainer>
         </BoxContainer>
         <Control MinHeight="10"/>
         <TabContainer Name="TabContainer" VerticalExpand="True">

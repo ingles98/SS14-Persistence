@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using Content.Server.Chat.Managers;
 using Content.Shared.Mind;
 using Content.Shared.Roles;
@@ -48,13 +48,12 @@ public sealed class JobSystem : SharedJobSystem
         if (!MindTryGetJob(mindId, out var prototype))
             return;
 
-        _chat.DispatchServerMessage(session, Loc.GetString("job-greet-introduce-job-name",
-            ("jobName", CultureInfo.CurrentCulture.TextInfo.ToTitleCase(prototype.LocalizedName))));
+        _chat.DispatchServerMessage(session, "You have entered the Threshold as a Colonist.");
 
         if (prototype.RequireAdminNotify)
             _chat.DispatchServerMessage(session, Loc.GetString("job-greet-important-disconnect-admin-notify"));
 
-        _chat.DispatchServerMessage(session, Loc.GetString("job-greet-supervisors-warning", ("jobName", prototype.LocalizedName), ("supervisors", Loc.GetString(prototype.Supervisors))));
+        _chat.DispatchServerMessage(session, "You are entitled to a paying job from Nanotrasen but you are also free to choose your own destiny. ");
     }
 
     public void MindAddJob(EntityUid mindId, string jobPrototypeId)

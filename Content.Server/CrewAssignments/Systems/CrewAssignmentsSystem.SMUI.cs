@@ -32,6 +32,8 @@ public sealed partial class CrewAssignmentSystem
     
     private void InitializeConsole()
     {
+        SubscribeLocalEvent<StationModificationConsoleComponent, StationModificationChangeExportTax>(OnChangeExportTax);
+        SubscribeLocalEvent<StationModificationConsoleComponent, StationModificationChangeImportTax>(OnChangeImportTax);
         SubscribeLocalEvent<StationModificationConsoleComponent, StationModificationRemoveOwner>(OnRemoveOwner);
         SubscribeLocalEvent<StationModificationConsoleComponent, StationModificationAddOwner>(OnAddOwner);
         SubscribeLocalEvent<StationModificationConsoleComponent, StationModificationChangeName>(OnChangeName);
@@ -178,6 +180,36 @@ public sealed partial class CrewAssignmentSystem
         UpdateOrders(station.Value);
     }
 
+    private void OnChangeExportTax(EntityUid uid, StationModificationConsoleComponent component, StationModificationChangeExportTax args)
+    {
+        if (args.Level < 0 || args.Level > 100) return;
+        if (args.Actor is not { Valid: true } player)
+            return;
+
+        var station = _station.GetOwningStation(uid);
+        if (station == null) return;
+
+        if (!Validate(uid, component, player, out var stationData)) return;
+        if (args.Level < 0) return;
+        stationData!.ExportTax = args.Level;
+        UpdateOrders(station.Value);
+
+    }
+    private void OnChangeImportTax(EntityUid uid, StationModificationConsoleComponent component, StationModificationChangeImportTax args)
+    {
+        if (args.Level < 0 || args.Level > 200) return;
+        if (args.Actor is not { Valid: true } player)
+            return;
+
+        var station = _station.GetOwningStation(uid);
+        if (station == null) return;
+
+        if (!Validate(uid, component, player, out var stationData)) return;
+        if (args.Level < 0) return;
+        stationData!.ImportTax = args.Level;
+        UpdateOrders(station.Value);
+
+    }
     private void OnChangeCLevel(EntityUid uid, StationModificationConsoleComponent component, StationModificationChangeAssignmentCLevel args)
     {
         if (args.Actor is not { Valid: true } player)
@@ -521,7 +553,9 @@ public sealed partial class CrewAssignmentSystem
                 GetNetEntity(station.Value),
                 data.Owners,
                 cadata.CrewAccesses,
-                casdata.CrewAssignments
+                casdata.CrewAssignments,
+                data.ImportTax,
+                data.ExportTax
             ));
         }
     }

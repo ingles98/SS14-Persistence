@@ -142,10 +142,9 @@ namespace Content.Client.Cargo.BUI
 
             if (_menu == null)
                 return;
-
             _menu.ProductCatalogue = cState.Products;
 
-            _menu?.UpdateStation(station, cState.PersonalMode);
+            _menu?.UpdateStation(station, cState.PersonalMode, cState.Tax);
             Populate(cState.Orders);
         }
 
