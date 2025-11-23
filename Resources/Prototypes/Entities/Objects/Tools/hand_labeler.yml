@@ -23,6 +23,7 @@
       whitelist:
         components:
           - Item
+          - Door
         tags:
           - Structure
     - type: PhysicalComposition

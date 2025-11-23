@@ -1,5 +1,7 @@
+using Content.Shared.Access.Systems;
 using Content.Shared.Administration.Logs;
 using Content.Shared.Database;
+using Content.Shared.Doors.Components;
 using Content.Shared.Examine;
 using Content.Shared.Interaction;
 using Content.Shared.Labels.Components;
@@ -19,6 +21,8 @@ public abstract class SharedHandLabelerSystem : EntitySystem
     [Dependency] private readonly ISharedAdminLogManager _adminLogger = default!;
     [Dependency] private readonly INetManager _netManager = default!;
     [Dependency] private readonly EntityWhitelistSystem _whitelistSystem = default!;
+    [Dependency] private readonly AccessReaderSystem _accessReader = default!;
+    [Dependency] private readonly MetaDataSystem _metadataSystem = default!;
 
     public override void Initialize()
     {
@@ -108,7 +112,31 @@ public abstract class SharedHandLabelerSystem : EntitySystem
 
     private void Labeling(EntityUid uid, EntityUid target, EntityUid User, HandLabelerComponent handLabeler)
     {
-        AddLabelTo(uid, handLabeler, target, out var result);
+        string? result;
+        if (TryComp<DoorComponent>(target, out var door) && door != null && TryComp<MetaDataComponent>(target, out var meta) && meta != null && meta.EntityPrototype != null)
+        {
+            if (!_accessReader.IsAllowed(User, target))
+                return;
+
+            if (handLabeler.AssignedLabel == string.Empty)
+            {
+                if (_netManager.IsServer)
+                    _metadataSystem.SetEntityName(target, meta.EntityPrototype.Name);
+                result = Loc.GetString("hand-labeler-successfully-removed");
+            }
+            else
+            {
+                if (_netManager.IsServer)
+                    _metadataSystem.SetEntityName(target, handLabeler.AssignedLabel);
+                result = Loc.GetString("hand-labeler-successfully-applied");
+            }
+        }
+        else
+        {
+            AddLabelTo(uid, handLabeler, target, out var r);
+            result = r;
+        }
+
         if (result == null)
             return;
 
