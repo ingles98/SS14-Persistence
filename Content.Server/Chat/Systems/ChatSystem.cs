@@ -405,14 +405,14 @@ public sealed partial class ChatSystem : SharedChatSystem
 
         name = FormattedMessage.EscapeText(name);
 
-        var wrappedMessage = Loc.GetString(speech.Bold ? "chat-manager-entity-say-bold-wrap-message" : "chat-manager-entity-say-wrap-message",
-            ("entityName", name),
+        SendInVoiceRange(
+            speech.Bold ? "chat-manager-entity-say-bold-wrap-message" : "chat-manager-entity-say-wrap-message",
+            [("entityName", name),
             ("verb", Loc.GetString(_random.Pick(speech.SpeechVerbStrings))),
             ("fontType", speech.FontId),
             ("fontSize", speech.FontSize),
-            ("message", FormattedMessage.EscapeText(message)));
-
-        SendInVoiceRange(ChatChannel.Local, message, wrappedMessage, source, range);
+            ("message", FormattedMessage.EscapeText(message))],
+            ChatChannel.Local, message, source, range);
 
         var ev = new EntitySpokeEvent(source, message, null, null);
         RaiseLocalEvent(source, ev, true);
@@ -547,17 +547,18 @@ public sealed partial class ChatSystem : SharedChatSystem
         var ent = Identity.Entity(source, EntityManager);
         string name = FormattedMessage.EscapeText(nameOverride ?? Name(ent));
 
-        // Emotes use Identity.Name, since it doesn't actually involve your voice at all.
-        var wrappedMessage = Loc.GetString("chat-manager-entity-me-wrap-message",
-            ("entityName", name),
-            ("entity", ent),
-            ("message", FormattedMessage.RemoveMarkupOrThrow(action)));
 
         if (checkEmote &&
             !TryEmoteChatInput(source, action))
             return;
 
-        SendInVoiceRange(ChatChannel.Emotes, action, wrappedMessage, source, range, author);
+        // Emotes use Identity.Name, since it doesn't actually involve your voice at all.
+        SendInVoiceRange(
+            "chat-manager-entity-me-wrap-message",
+            [("entityName", name),
+            ("entity", ent),
+            ("message", FormattedMessage.RemoveMarkupOrThrow(action))],
+            ChatChannel.Emotes, action, source, range, author);
         if (!hideLog)
             if (name != Name(source))
                 _adminLogger.Add(LogType.Chat, LogImpact.Low, $"Emote from {source} as {name}: {action}");
@@ -580,11 +581,11 @@ public sealed partial class ChatSystem : SharedChatSystem
         if (!_critLoocEnabled && _mobStateSystem.IsCritical(source))
             return;
 
-        var wrappedMessage = Loc.GetString("chat-manager-entity-looc-wrap-message",
-            ("entityName", name),
-            ("message", FormattedMessage.EscapeText(message)));
-
-        SendInVoiceRange(ChatChannel.LOOC, message, wrappedMessage, source, hideChat ? ChatTransmitRange.HideChat : ChatTransmitRange.Normal, player.UserId);
+        SendInVoiceRange(
+            "chat-manager-entity-looc-wrap-message",
+            [("entityName", name),
+            ("message", FormattedMessage.EscapeText(message))],
+            ChatChannel.LOOC, message, source, hideChat ? ChatTransmitRange.HideChat : ChatTransmitRange.Normal, player.UserId);
         _adminLogger.Add(LogType.Chat, LogImpact.Low, $"LOOC from {source}: {message}");
     }
 
@@ -665,15 +666,42 @@ public sealed partial class ChatSystem : SharedChatSystem
     /// <summary>
     ///     Sends a chat message to the given players in range of the source entity.
     /// </summary>
-    private void SendInVoiceRange(ChatChannel channel, string message, string wrappedMessage, EntityUid source, ChatTransmitRange range, NetUserId? author = null)
+    private void SendInVoiceRange(string messageId, (string, object)[] args, ChatChannel channel, string message, EntityUid source, ChatTransmitRange range, NetUserId? author = null, string? nameOverride = null)
     {
+        var wrappedMessage = Loc.GetString(messageId, args);
         foreach (var (session, data) in GetRecipients(source, VoiceRange))
         {
+            EntityUid listener;
+
+            if (session.AttachedEntity is not { Valid: true } playerEntity)
+                continue;
+            listener = session.AttachedEntity.Value;
+
             var entRange = MessageRangeCheck(session, data, range);
             if (entRange == MessageRangeCheckResult.Disallowed)
                 continue;
+
+            var isYelling = message == "screams!" || messageId == "chat-manager-entity-say-bold-wrap-message";
+            var inRangeButOccluded = !_examineSystem.InRangeUnOccluded(source, listener, VoiceRange);
+            if (inRangeButOccluded && data.Range > (isYelling ? VoiceRange : 2))
+                continue;
+
             var entHideChat = entRange == MessageRangeCheckResult.HideChat;
-            _chatManager.ChatMessageToOne(channel, message, wrappedMessage, source, entHideChat, session.Channel, author: author);
+            if ((channel == ChatChannel.Local || channel == ChatChannel.Emotes) && inRangeButOccluded)
+            {
+                string obfuscatedMessage = channel == ChatChannel.Local ? ObfuscateMessageReadability(message, isYelling ? 0.85f : 0.35f) : message;
+                string wrappedMessageObfuscated = Loc.GetString(messageId, args.Select(x =>
+                {
+                    if (x.Item1 == "entityName")
+                        x.Item2 = "Someone";
+                    if (x.Item1 == "message")
+                        x.Item2 = obfuscatedMessage;
+                    return x;
+                }).ToArray());
+                _chatManager.ChatMessageToOne(channel, obfuscatedMessage, wrappedMessageObfuscated, source, entHideChat, session.Channel, author: author);
+            }
+            else
+                _chatManager.ChatMessageToOne(channel, message, wrappedMessage, source, entHideChat, session.Channel, author: author);
         }
 
         _replay.RecordServerMessage(new ChatMessage(channel, message, wrappedMessage, GetNetEntity(source), null, MessageRangeHideChatForReplay(range)));
