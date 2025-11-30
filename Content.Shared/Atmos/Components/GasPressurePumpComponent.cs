@@ -10,7 +10,7 @@ public sealed partial class GasPressurePumpComponent : Component
     public bool Enabled = true;
 
     [DataField]
-    public bool DesiredEnabled = true;
+    public bool DesiredEnabled = false;
 
     [DataField("inlet")]
     public string InletName = "inlet";
