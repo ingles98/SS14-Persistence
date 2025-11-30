@@ -658,7 +658,10 @@ public abstract partial class SharedGunSystem : EntitySystem
     private void OnComponentInit(Entity<GunComponent> ent, ref ComponentInit args)
     {
         RefreshModifiers(ent.AsNullable());
-
+    }
+    public override void Update(float frameTime)
+    {
+        UpdateBattery(frameTime);
     }
 }
 
