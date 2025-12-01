@@ -5,6 +5,7 @@ using Content.Shared.Access;
 using Content.Shared.Access.Components;
 using Content.Shared.Access.Systems;
 using Content.Shared.Administration.Logs;
+using Content.Shared.CCVar;
 using Content.Shared.Containers.ItemSlots;
 using Content.Shared.CrewAccesses.Components;
 using Content.Shared.CrewAssignments.Components;
@@ -21,7 +22,9 @@ using Robust.Server.Containers;
 using Robust.Server.GameObjects;
 using Robust.Shared.Audio;
 using Robust.Shared.Audio.Systems;
+using Robust.Shared.Configuration;
 using Robust.Shared.Containers;
+using Robust.Shared.Map.Components;
 using Robust.Shared.Player;
 using Robust.Shared.Prototypes;
 using System;
@@ -46,6 +49,9 @@ public sealed class GridConfigSystem : SharedGridConfigSystem
     [Dependency] private readonly TransformSystem _transform = default!;
     [Dependency] private readonly MetaDataSystem _metaData = default!;
     [Dependency] private readonly ItemSlotsSystem _itemSlots = default!;
+    [Dependency] private readonly MapSystem _mapSystem = default!;
+    [Dependency] private readonly IConfigurationManager _cfg = default!;
+
     public override void Initialize()
     {
         base.Initialize();
@@ -108,6 +114,21 @@ public sealed class GridConfigSystem : SharedGridConfigSystem
         var privilegedIdName = string.Empty;
         var privilegedName = string.Empty;
         bool idPresent = false;
+
+
+        if (component.PersonalMode)
+        {
+            var targetGrid = _transform.GetGrid(uid);
+            if (targetGrid.HasValue && TryComp<MapGridComponent>(targetGrid, out var targetGridComp))
+            {
+                var tiles = _mapSystem.GetAllTiles(targetGrid.Value, targetGridComp);
+                if (tiles.Count() > _cfg.GetCVar(CCVars.GridClaimPersonalMaxTiles))
+                    return false;
+            }
+            else
+                return false;
+        }
+
         if (component.PrivilegedIdSlot.Item is { Valid: true } idCard)
         {
             idPresent = true;
@@ -499,7 +520,15 @@ public sealed class GridConfigSystem : SharedGridConfigSystem
         GridConfigBoundUserInterfaceState newState;
         bool allowed = true;
 
-        newState = new GridConfigBoundUserInterfaceState(idPresent, isOwner, isAuth, component.PersonalMode, possibleStations, targetName, owningPerson, gridName, privilegedIdName, targetStation);
+        int gridTileCount = 0;
+        if (TryComp<MapGridComponent>(grid, out var targetGridComp))
+            gridTileCount = _mapSystem.GetAllTiles(grid.Value, targetGridComp).Count();
+
+        newState = new GridConfigBoundUserInterfaceState(
+            idPresent, isOwner, isAuth, component.PersonalMode, possibleStations,
+            targetName, owningPerson, gridName, privilegedIdName, targetStation,
+            gridTileCount, _cfg.GetCVar(CCVars.GridClaimPersonalMaxTiles)
+        );
 
         _userInterface.SetUiState(uid, GridConfigUiKey.Key, newState);
     }

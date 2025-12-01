@@ -15,6 +15,14 @@
         </BoxContainer>
         <Control VerticalExpand="True"/>
         <Label Name="MissingPrivilegesLabel" Text =" " />
+        <BoxContainer Name="PersonalGridSizeViewer" Orientation="Horizontal">
+            <Label Text="Grid Size: " />
+            <Label Text="0" Name="GridTileCount"/>
+            <BoxContainer Name="MaxPersonalClaimTileCountContainer">
+                <Label Text=" / "/>
+                <Label Text="0" Name="MaxPersonalClaimTileCount"/>
+            </BoxContainer>
+        </BoxContainer>
         <BoxContainer Orientation="Horizontal">
             <Label Text="Grid Owner: " />
             <Label Text="Dev" Name="GridOwnerLabel"/>

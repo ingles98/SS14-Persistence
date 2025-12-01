@@ -79,11 +79,15 @@ public sealed partial class GridConfigWindow : DefaultWindow
         {
             targetName = state.TargetName; 
         }
+        GridTileCount.Text = state.GridTileCount.ToString();
         if (state.PersonalMode)
         {
             ChangeModeBtn.Text = "Station";
             PossibleTargets.Visible = false;
             TargetNameLabel.Text = $"Target Person: {targetName}";
+
+            MaxPersonalClaimTileCountContainer.Visible = true;
+            MaxPersonalClaimTileCount.Text = state.MaxPersonalClaimTileCount.ToString();
         }
         else
         {
@@ -103,6 +107,7 @@ public sealed partial class GridConfigWindow : DefaultWindow
                     }
                 }
             }
+            MaxPersonalClaimTileCountContainer.Visible = false;
         }
         bool gridFound = false;
         if(state.GridName != null)
