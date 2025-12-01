@@ -8,7 +8,7 @@ public sealed partial class CCVars
     ///     Whether or not world generation is enabled.
     /// </summary>
     public static readonly CVarDef<bool> WorldgenEnabled =
-        CVarDef.Create("worldgen.enabled", false, CVar.SERVERONLY);
+        CVarDef.Create("worldgen.enabled", true, CVar.SERVERONLY);
 
     /// <summary>
     ///     The worldgen config to use.
@@ -23,5 +23,5 @@ public sealed partial class CCVars
     ///     How much round time in seconds must pass before a chunk is unloaded
     /// </summary>
     public static readonly CVarDef<int> WorldChunkUnloadDelay =
-        CVarDef.Create("worldgen.chunk_unload_delay", 3 * 24 * 60 * 60, CVar.SERVERONLY); // 3 Days default of total Round Time
+        CVarDef.Create("worldgen.chunk_unload_delay", 300, CVar.SERVERONLY); // 3 Days default of total Round Time
 }

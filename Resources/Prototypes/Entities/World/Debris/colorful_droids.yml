@@ -3,7 +3,7 @@
   id: BaseBiome
   noiseRanges:
     BiomeBaseMask:
-      - 0.5,1
+      - 0.15,1
 
 - type: spaceBiome
   parent: BaseBiome
