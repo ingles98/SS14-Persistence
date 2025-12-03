@@ -25,12 +25,18 @@ namespace Content.Shared.Solar
         /// </summary>
         public Angle TowardsSun;
 
-        public SolarControlConsoleBoundInterfaceState(Angle r, Angle vm, float p, Angle tw)
+        /// <summary>
+        /// Whether the grid has a solar tracker so the console is capable of tracking the sun.
+        /// </summary>
+        public bool HasTracker;
+
+        public SolarControlConsoleBoundInterfaceState(Angle r, Angle vm, float p, Angle tw, bool hasTracker)
         {
             Rotation = r;
             AngularVelocity = vm;
             OutputPower = p;
             TowardsSun = tw;
+            HasTracker = hasTracker;
         }
     }
 

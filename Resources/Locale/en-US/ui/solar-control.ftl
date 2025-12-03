@@ -1,6 +1,7 @@
 solar-control-window-title = Solar Control Console
 solar-control-window-output-power = Output Power:
 solar-control-window-watts = W
+solar-control-window-missing-tracker = Error: No solar tracker present
 solar-control-window-sun-angle = Sun Angle:
 solar-control-window-degrees = °
 solar-control-window-panel-angle = Panel Angle:

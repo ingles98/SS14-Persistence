@@ -351,6 +351,7 @@
   placement:
     mode: SnapgridCenter
   components:
+  - type: SolarTracker
   - type: Clickable
   - type: InteractionOutline
   - type: Physics

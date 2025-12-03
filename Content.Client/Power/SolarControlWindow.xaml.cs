@@ -17,7 +17,7 @@ namespace Content.Client.Power
     public sealed partial class SolarControlWindow : DefaultWindow, IComputerWindow<SolarControlConsoleBoundInterfaceState>
     {
         [ViewVariables]
-        private SolarControlConsoleBoundInterfaceState _lastState = new(0, 0, 0, 0);
+        private SolarControlConsoleBoundInterfaceState _lastState = new(0, 0, 0, 0, false);
 
         public SolarControlWindow()
         {
@@ -26,6 +26,8 @@ namespace Content.Client.Power
 
         public void SetupComputerWindow(ComputerBoundUserInterfaceBase cb)
         {
+            MissingSolarTracker.FontColorOverride = Color.Red;
+
             PanelRotation.OnTextEntered += text =>
             {
                 if (!double.TryParse((string?) text.Text, out var value))
@@ -80,6 +82,11 @@ namespace Content.Client.Power
         public void UpdateState(SolarControlConsoleBoundInterfaceState scc)
         {
             _lastState = scc;
+
+            SunAngle.Visible = SunAngleUnit.Visible = SunAngleLabel.Visible = SunAngleLabel2.Visible
+                = scc.HasTracker;
+            MissingSolarTracker.Visible = !scc.HasTracker;
+
             NotARadar.UpdateState(scc);
             OutputPower.Text = ((int) MathF.Floor(scc.OutputPower)).ToString();
             SunAngle.Text = FormatAngle(scc.TowardsSun);
@@ -95,7 +102,7 @@ namespace Content.Client.Power
         // This makes the display feel a lot smoother.
         [Dependency] private readonly IGameTiming _gameTiming = default!;
 
-        private SolarControlConsoleBoundInterfaceState _lastState = new(0, 0, 0, 0);
+        private SolarControlConsoleBoundInterfaceState _lastState = new(0, 0, 0, 0, false);
 
         private TimeSpan _lastStateTime = TimeSpan.Zero;
 

@@ -3,6 +3,7 @@ using Content.Server.Discord;
 using Content.Server.GameTicking.Events;
 using Content.Server.Maps;
 using Content.Server.Roles;
+using Content.Server.Solar.Components;
 using Content.Shared._NF.Bank.Components;
 using Content.Shared.CCVar;
 using Content.Shared.CrewMetaRecords;
@@ -213,6 +214,7 @@ namespace Content.Server.GameTicking
                 EnsureComp<MoneyAccountsComponent>(ent);
                 EnsureComp<CrewMetaRecordsComponent>(ent);
                 EnsureComp<MapBoundsComponent>(ent);
+                EnsureComp<SolarLocationComponent>(ent);
                 return;
             }
 
@@ -227,6 +229,7 @@ namespace Content.Server.GameTicking
                 EnsureComp<MoneyAccountsComponent>(ent);
                 EnsureComp<CrewMetaRecordsComponent>(ent);
                 EnsureComp<MapBoundsComponent>(ent);
+                EnsureComp<SolarLocationComponent>(ent);
             }
         }
 

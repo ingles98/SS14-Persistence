@@ -26,5 +26,20 @@ namespace Content.Server.Solar.Components
         /// </summary>
         [ViewVariables]
         public float Coverage { get; set; } = 0;
+
+
+        /// <summary>
+        /// TODO: *Should be moved into the solar tracker when powernet allows for it.*
+        /// The current target panel rotation.
+        /// </summary>
+        [DataField]
+        public Angle TargetPanelRotation = Angle.Zero;
+
+        /// <summary>
+        /// TODO: *Should be moved into the solar tracker when powernet allows for it.*
+        /// The current target panel velocity.
+        /// </summary>
+        [DataField]
+        public Angle TargetPanelVelocity = Angle.Zero;
     }
 }

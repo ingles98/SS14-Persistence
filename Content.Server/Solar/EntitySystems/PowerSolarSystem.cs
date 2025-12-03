@@ -16,48 +16,29 @@ namespace Content.Server.Solar.EntitySystems
     [UsedImplicitly]
     internal sealed class PowerSolarSystem : EntitySystem
     {
-        [Dependency] private readonly IRobustRandom _robustRandom = default!;
         [Dependency] private readonly SharedPhysicsSystem _physicsSystem = default!;
         [Dependency] private readonly SharedTransformSystem _transformSystem = default!;
+        [Dependency] private readonly SolarPositioningSystem _solarPositioning = default!;
 
         /// <summary>
         /// Maximum panel angular velocity range - used to stop people rotating panels fast enough that the lag prevention becomes noticable
         /// </summary>
         public const float MaxPanelVelocityDegrees = 1f;
 
-        /// <summary>
-        /// The current sun angle.
-        /// </summary>
-        public Angle TowardsSun = Angle.Zero;
-
-        /// <summary>
-        /// The current sun angular velocity. (This is changed in Initialize)
-        /// </summary>
-        public Angle SunAngularVelocity = Angle.Zero;
 
         /// <summary>
         /// The distance before the sun is considered to have been 'visible anyway'.
         /// This value, like the occlusion semantics, is borrowed from all the other SS13 stations with solars.
         /// </summary>
-        public float SunOcclusionCheckDistance = 20;
+        public const float SunOcclusionCheckDistance = 20;
+
+        public Dictionary<EntityUid, float> TotalPanelPowerByGrid = new();
 
         /// <summary>
-        /// TODO: *Should be moved into the solar tracker when powernet allows for it.*
-        /// The current target panel rotation.
+        /// Used to lookup all panels on a single grid without constant lookup.
+        /// This gets updated when solar panels update so it doesnt add any extra overhead.
         /// </summary>
-        public Angle TargetPanelRotation = Angle.Zero;
-
-        /// <summary>
-        /// TODO: *Should be moved into the solar tracker when powernet allows for it.*
-        /// The current target panel velocity.
-        /// </summary>
-        public Angle TargetPanelVelocity = Angle.Zero;
-
-        /// <summary>
-        /// TODO: *Should be moved into the solar tracker when powernet allows for it.*
-        /// Last update of total panel power.
-        /// </summary>
-        public float TotalPanelPower = 0;
+        public Dictionary<EntityUid, HashSet<EntityUid>> PanelsByGrid = new();
 
         /// <summary>
         /// Queue of panels to update each cycle.
@@ -67,23 +48,7 @@ namespace Content.Server.Solar.EntitySystems
         public override void Initialize()
         {
             SubscribeLocalEvent<SolarPanelComponent, MapInitEvent>(OnMapInit);
-            SubscribeLocalEvent<RoundRestartCleanupEvent>(Reset);
-            RandomizeSun();
-        }
-
-        public void Reset(RoundRestartCleanupEvent ev)
-        {
-            RandomizeSun();
-            TargetPanelRotation = Angle.Zero;
-            TargetPanelVelocity = Angle.Zero;
-            TotalPanelPower = 0;
-        }
-
-        private void RandomizeSun()
-        {
-            // Initialize the sun to something random
-            TowardsSun = MathHelper.TwoPi * _robustRandom.NextDouble();
-            SunAngularVelocity = Angle.FromDegrees(0.1 + ((_robustRandom.NextDouble() - 0.5) * 0.05));
+            SubscribeLocalEvent<SolarPanelComponent, AnchorStateChangedEvent>(OnAnchorStateChange);
         }
 
         private void OnMapInit(EntityUid uid, SolarPanelComponent component, MapInitEvent args)
@@ -91,31 +56,58 @@ namespace Content.Server.Solar.EntitySystems
             UpdateSupply(uid, component);
         }
 
+        private void OnAnchorStateChange(Entity<SolarPanelComponent> ent, ref AnchorStateChangedEvent args)
+        {
+            if (args.Anchored)
+            {
+                var gridUid = _transformSystem.GetGrid(ent.Owner);
+                if (gridUid.HasValue)
+                {
+                    SyncPanelToExisting(gridUid.Value, ent.Owner, ent.Comp);
+                }
+            }
+        }
+
         public override void Update(float frameTime)
         {
-            TowardsSun += SunAngularVelocity * frameTime;
-            TowardsSun = TowardsSun.Reduced();
-
-            TargetPanelRotation += TargetPanelVelocity * frameTime;
-            TargetPanelRotation = TargetPanelRotation.Reduced();
-
-            if (_updateQueue.Count > 0)
+            var processingUpdateQueue = _updateQueue.Count > 0;
+            if (processingUpdateQueue)
             {
                 var panel = _updateQueue.Dequeue();
                 if (panel.Comp.Running)
                     UpdatePanelCoverage(panel);
             }
-            else
-            {
-                TotalPanelPower = 0;
 
-                var query = EntityQueryEnumerator<SolarPanelComponent, TransformComponent>();
-                while (query.MoveNext(out var uid, out var panel, out var xform))
-                {
-                    TotalPanelPower += panel.MaxSupply * panel.Coverage;
-                    _transformSystem.SetWorldRotation(xform, TargetPanelRotation);
-                    _updateQueue.Enqueue((uid, panel));
-                }
+            if (!processingUpdateQueue)
+            {
+                TotalPanelPowerByGrid.Clear();
+                PanelsByGrid.Clear();
+            }
+
+            var query = EntityQueryEnumerator<SolarPanelComponent, TransformComponent>();
+            while (query.MoveNext(out var uid, out var panel, out var xform))
+            {
+                // Panels in space... How do you even wire them?
+                if (xform.GridUid == null) continue;
+                if (!xform.Anchored) continue;
+
+                var gridUid = xform.GridUid.Value;
+
+                panel.TargetPanelRotation += panel.TargetPanelVelocity * frameTime;
+                panel.TargetPanelRotation = panel.TargetPanelRotation.Reduced();
+
+                if (processingUpdateQueue) continue;
+
+                if (!TotalPanelPowerByGrid.ContainsKey(gridUid))
+                    TotalPanelPowerByGrid[gridUid] = 0;
+                TotalPanelPowerByGrid[gridUid] += panel.MaxSupply * panel.Coverage;
+
+                if (!PanelsByGrid.ContainsKey(gridUid))
+                    PanelsByGrid[gridUid] = [];
+                PanelsByGrid[gridUid].Add(uid);
+
+                _transformSystem.SetWorldRotation(xform, panel.TargetPanelRotation);
+                _updateQueue.Enqueue((uid, panel));
             }
         }
 
@@ -123,6 +115,9 @@ namespace Content.Server.Solar.EntitySystems
         {
             var entity = panel.Owner;
             var xform = Comp<TransformComponent>(entity);
+
+            var solarLocation = _solarPositioning.GetSolarLocation(entity);
+            var towardsSun = solarLocation?.TowardsSun ?? Angle.Zero;
 
             // So apparently, and yes, I *did* only find this out later,
             // this is just a really fancy way of saying "Lambert's law of cosines".
@@ -136,7 +131,7 @@ namespace Content.Server.Solar.EntitySystems
             // directly downwards (abs(theta) = pi) = coverage -1
             // as TowardsSun + = CCW,
             // panelRelativeToSun should - = CW
-            var panelRelativeToSun = _transformSystem.GetWorldRotation(xform) - TowardsSun;
+            var panelRelativeToSun = _transformSystem.GetWorldRotation(xform) - towardsSun;
             // essentially, given cos = X & sin = Y & Y is 'downwards',
             // then for the first 90 degrees of rotation in either direction,
             // this plots the lower-right quadrant of a circle.
@@ -149,12 +144,12 @@ namespace Content.Server.Solar.EntitySystems
             //
             // as for when it goes negative, it only does that when (abs(theta) > pi)
             // and that's expected behavior.
-            float coverage = (float)Math.Max(0, Math.Cos(panelRelativeToSun));
+            float coverage = solarLocation != null ? (float)Math.Max(0, Math.Cos(panelRelativeToSun)) : 0;
 
             if (coverage > 0)
             {
                 // Determine if the solar panel is occluded, and zero out coverage if so.
-                var ray = new CollisionRay(_transformSystem.GetWorldPosition(xform), TowardsSun.ToWorldVec(), (int) CollisionGroup.Opaque);
+                var ray = new CollisionRay(_transformSystem.GetWorldPosition(xform), towardsSun.ToWorldVec(), (int) CollisionGroup.Opaque);
                 var rayCastResults = _physicsSystem.IntersectRayWithPredicate(
                     xform.MapID,
                     ray,
@@ -178,6 +173,67 @@ namespace Content.Server.Solar.EntitySystems
                 return;
 
             supplier.MaxSupply = (int) (solar.MaxSupply * solar.Coverage);
+        }
+
+        private void SyncPanelToExisting(EntityUid gridUid, EntityUid owner, SolarPanelComponent comp)
+        {
+            var otherPanel = GetGridPanelEntities(gridUid)
+                .Select(x =>
+                {
+                    if (TryComp<SolarPanelComponent>(x, out var otherPanel))
+                        return otherPanel;
+                    return null;
+                }).FirstOrDefault();
+            if (otherPanel != null)
+            {
+                comp.TargetPanelRotation = otherPanel.TargetPanelRotation;
+                comp.TargetPanelVelocity = otherPanel.TargetPanelVelocity;
+            }
+        }
+
+        public IEnumerable<EntityUid> GetGridPanelEntities(EntityUid gridUid)
+        {
+            if (PanelsByGrid.TryGetValue(gridUid, out var panelEntities))
+                return panelEntities.AsEnumerable();
+            return [];
+        }
+
+        public IEnumerable<SolarPanelComponent> GetGridPanels(EntityUid gridUid)
+        {
+            return GetGridPanelEntities(gridUid)
+                .Select(x =>
+                {
+                    if (TryComp<SolarPanelComponent>(x, out var comp))
+                        return comp;
+                    return null;
+                })
+                .Where(x => x != null)
+                .OfType<SolarPanelComponent>();
+        }
+
+        internal float GetGridTotalPower(EntityUid gridUid)
+        {
+            if (TotalPanelPowerByGrid.TryGetValue(gridUid, out var totalPanelPower))
+                return totalPanelPower;
+            return 0;
+        }
+
+        public void SetTargetPanelRotation(EntityUid gridUid, Angle angle)
+        {
+            foreach (var panel in GetGridPanels(gridUid))
+                panel.TargetPanelRotation = angle;
+        }
+
+        public void SetTargetPanelVelocity(EntityUid gridUid, Angle angle)
+        {
+            foreach (var panel in GetGridPanels(gridUid))
+                panel.TargetPanelVelocity = angle;
+        }
+
+        public void SetTargetPanelVelocityDegrees(EntityUid gridUid, double degrees)
+        {
+            degrees = Math.Clamp(degrees, -MaxPanelVelocityDegrees, MaxPanelVelocityDegrees);
+            SetTargetPanelVelocity(gridUid, Angle.FromDegrees(degrees));
         }
     }
 }
