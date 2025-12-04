@@ -94,7 +94,7 @@ namespace Content.Server.Atmos.EntitySystems
             var airtightEv = new AirtightChanged(owner, airtight, false, pos);
             RaiseLocalEvent(owner, ref airtightEv, true);
         }
-        private void OnPowerChanged(Entity<AirtightComponent> airtight, ref PowerChangedEvent args) 
+        private void OnPowerChanged(Entity<AirtightComponent> airtight, ref PowerChangedEvent args)
         {
             var xform = Transform(airtight);
 
