@@ -12,6 +12,11 @@
   - type: Pullable
   - type: Physics
     bodyType: Static
+  - type: ApcPowerReceiver
+    powerLoad: 500
+  - type: ExtensionCableReceiver
+  - type: LightningTarget
+    priority: 1
   - type: Sprite
     sprite: Structures/Piping/Atmospherics/tinyfan.rsi
     state: icon
@@ -23,6 +28,7 @@
             bounds: "-0.5,-0.5,0.5,0.5"
   - type: Airtight
     noAirWhenFullyAirBlocked: false
+    requiresPower: true
   - type: Clickable
   - type: Tag
     tags:
@@ -42,6 +48,11 @@
   - type: Rotatable
   - type: Physics
     bodyType: Static
+  - type: ApcPowerReceiver
+    powerLoad: 500
+  - type: ExtensionCableReceiver
+  - type: LightningTarget
+    priority: 1
   - type: Sprite
     sprite: Structures/Piping/Atmospherics/directionalfan.rsi
     state: icon
@@ -55,6 +66,7 @@
     noAirWhenFullyAirBlocked: false
     airBlockedDirection:
       - South
+    requiresPower: true
   - type: Clickable
   - type: Tag
     tags:
