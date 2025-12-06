@@ -98,6 +98,7 @@ namespace Content.Server.GameTicking
         ///
         private void SaveMaps()
         {
+            _map.SetPaused(DefaultMap, true);
             bool finalSaveFound = false;
             var initial = new ResPath("current");
             ResPath path = initial;
@@ -125,6 +126,7 @@ namespace Content.Server.GameTicking
             var end = _gameTiming.CurTime;
             var finaltime = start - end;
             _adminLogger.Add(LogType.EventRan, LogImpact.Extreme, $"MAP SAVE STATUS: {save_stat} TIME TAKEN: {finaltime.TotalSeconds}");
+            _map.SetPaused(DefaultMap, false);
         }
 
         private void LoadMaps()
@@ -152,11 +154,10 @@ namespace Content.Server.GameTicking
                     }
                 }
                 var start = _gameTiming.CurTime;
-                bool save_stat = _loader.TryLoadMap(path!, out var entity, out var grids);
+                bool save_stat = _loader.TryLoadMap(path!, out var entity, out var grids, new DeserializationOptions() { PauseMaps = true });
                 if (entity.HasValue)
                 {
                     DefaultMap = entity.Value.Comp.MapId;
-
                 }
 
                 var end = _gameTiming.CurTime;
@@ -516,7 +517,7 @@ namespace Content.Server.GameTicking
                 // MapInitialize *before* spawning players, our codebase is too shit to do it afterwards...
                 _map.InitializeMap(DefaultMap);
             }
-            
+            _map.SetPaused(DefaultMap, false);
 
             SpawnPlayers(readyPlayers, readyPlayerProfiles, force);
 

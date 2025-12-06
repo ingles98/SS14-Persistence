@@ -112,6 +112,7 @@ namespace Content.Server.NPC.Systems
 
             Log.Debug($"Waking {ToPrettyString(uid)}");
             EnsureComp<ActiveNPCComponent>(uid);
+            SetPaused(uid, false);
         }
 
         public void SleepNPC(EntityUid uid, HTNComponent? component = null)
@@ -135,6 +136,7 @@ namespace Content.Server.NPC.Systems
 
             Log.Debug($"Sleeping {ToPrettyString(uid)}");
             RemComp<ActiveNPCComponent>(uid);
+            SetPaused(uid, true);
         }
 
         /// <inheritdoc />

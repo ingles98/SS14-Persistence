@@ -127,7 +127,10 @@ public sealed partial class DamageableSystem
         var query = EntityQueryEnumerator<DamageableComponent>();
         while (query.MoveNext(out var uid, out var comp))
         {
-            comp.DamageDictCopy = comp.Damage.DamageDict;
+            comp.DamageDictCopy = new();
+            foreach (var kv in comp.Damage.DamageDict)
+                if (kv.Value != default)
+                    comp.DamageDictCopy[kv.Key] = comp.Damage.DamageDict[kv.Key];
         }
 
 

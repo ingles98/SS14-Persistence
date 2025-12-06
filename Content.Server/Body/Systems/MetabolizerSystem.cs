@@ -22,6 +22,8 @@ using Robust.Shared.GameObjects;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Random;
 using Robust.Shared.Timing;
+using Robust.Shared.Utility;
+using Timer = Robust.Shared.Timing.Timer;
 
 namespace Content.Server.Body.Systems;
 
@@ -67,34 +69,26 @@ public sealed class MetabolizerSystem : SharedMetabolizerSystem
         {
             _solutionContainerSystem.EnsureSolution(body, entity.Comp.SolutionName, out _);
         }
+
+        Timer.Spawn((int)(entity.Comp.NextUpdate - _gameTiming.CurTime).TotalMilliseconds, () => TimerFired(entity));
+    }
+
+    private void TimerFired(Entity<MetabolizerComponent> ent)
+    {
+        if (TerminatingOrDeleted(ent))
+            return;
+
+        ent.Comp.NextUpdate += ent.Comp.AdjustedUpdateInterval;
+        TryMetabolize(ent);
+
+        var ms = (int)(ent.Comp.NextUpdate - _gameTiming.CurTime).TotalMilliseconds;
+        DebugTools.Assert(ms >= ent.Comp.AdjustedUpdateInterval.TotalMilliseconds / 2);
+        Timer.Spawn(ms, () => TimerFired(ent));
     }
 
     private void OnApplyMetabolicMultiplier(Entity<MetabolizerComponent> ent, ref ApplyMetabolicMultiplierEvent args)
     {
         ent.Comp.UpdateIntervalMultiplier = args.Multiplier;
-    }
-
-    public override void Update(float frameTime)
-    {
-        base.Update(frameTime);
-
-        var metabolizers = new ValueList<(EntityUid Uid, MetabolizerComponent Component)>(Count<MetabolizerComponent>());
-        var query = EntityQueryEnumerator<MetabolizerComponent>();
-
-        while (query.MoveNext(out var uid, out var comp))
-        {
-            metabolizers.Add((uid, comp));
-        }
-
-        foreach (var (uid, metab) in metabolizers)
-        {
-            // Only update as frequently as it should
-            if (_gameTiming.CurTime < metab.NextUpdate)
-                continue;
-
-            metab.NextUpdate += metab.AdjustedUpdateInterval;
-            TryMetabolize((uid, metab));
-        }
     }
 
     private void TryMetabolize(Entity<MetabolizerComponent, OrganComponent?, SolutionContainerManagerComponent?> ent)
