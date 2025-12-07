@@ -75,7 +75,7 @@
 
 # Medical
 
-  - type: latheRecipe
+- type: latheRecipe
   parent: [ BaseCircuitboardRecipe, BaseMedicalComputerRecipeCategory ]
   id: CrewMonitoringComputerCircuitboard
   result: CrewMonitoringComputerCircuitboard
