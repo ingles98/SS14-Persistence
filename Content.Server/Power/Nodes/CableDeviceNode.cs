@@ -2,6 +2,8 @@ using Content.Server.NodeContainer;
 using Content.Server.NodeContainer.EntitySystems;
 using Content.Server.NodeContainer.Nodes;
 using Content.Shared.NodeContainer;
+using Content.Server.UniversalElasticPort.Components;
+using Content.Server.UniversalElasticPort.Systems;
 using Robust.Shared.Map.Components;
 
 namespace Content.Server.Power.Nodes
@@ -39,6 +41,13 @@ namespace Content.Server.Power.Nodes
         {
             if (!xform.Anchored || grid == null)
                 yield break;
+
+            if (entMan.TryGetComponent<UEPComponent>(Owner, out var uep) && entMan.TrySystem<UniversalElasticPortSystem>(out var uepSys))
+            {
+                var remoteNode = uepSys.GetRemoteConnectionFor(Owner, uep, this);
+                if (remoteNode != null)
+                    yield return remoteNode;
+            }
 
             var gridIndex = grid.TileIndicesFor(xform.Coordinates);
 

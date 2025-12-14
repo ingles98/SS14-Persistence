@@ -1,6 +1,8 @@
 using Content.Shared.NodeContainer;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
+using Content.Server.UniversalElasticPort.Components;
+using Content.Server.UniversalElasticPort.Systems;
 
 namespace Content.Server.NodeContainer.Nodes
 {
@@ -17,6 +19,13 @@ namespace Content.Server.NodeContainer.Nodes
                 yield break;
 
             var gridIndex = grid.TileIndicesFor(xform.Coordinates);
+
+            if (entMan.TryGetComponent<UEPComponent>(Owner, out var uep) && entMan.TrySystem<UniversalElasticPortSystem>(out var uepSys))
+            {
+                var remoteNode = uepSys.GetRemoteConnectionFor(Owner, uep, this);
+                if (remoteNode != null)
+                    yield return remoteNode;
+            }
 
             foreach (var node in NodeHelpers.GetNodesInTile(nodeQuery, grid, gridIndex))
             {

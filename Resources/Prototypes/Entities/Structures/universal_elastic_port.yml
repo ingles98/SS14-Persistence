@@ -1,0 +1,61 @@
+- type: entity
+  id: BaseUniversalElasticPort
+  abstract: true
+  components:
+    - type: ActivatableUI
+      key: enum.UEPConsoleUiKey.Key
+    - type: UserInterface
+      interfaces:
+        enum.UEPConsoleUiKey.Key:
+          type: UEPBoundUserInterface
+    - type: NodeContainer
+      examinable: true
+      nodes:
+        powerHV:
+          !type:CableDeviceNode
+          nodeGroupID: HVPower
+        powerMV:
+          !type:CableDeviceNode
+          nodeGroupID: MVPower
+        powerLV:
+          !type:CableDeviceNode
+          nodeGroupID: Apc
+
+        pipe1:
+          !type:PortPipeNode
+          nodeGroupID: Pipe
+          rotationsEnabled: false
+          pipeDirection: All
+          pipeLayer: 0
+        pipe2:
+          !type:PortPipeNode
+          nodeGroupID: Pipe
+          rotationsEnabled: false
+          pipeDirection: All
+          pipeLayer: 1
+        pipe3:
+          !type:PortPipeNode
+          nodeGroupID: Pipe
+          rotationsEnabled: false
+          pipeDirection: All
+          pipeLayer: 2
+
+    - type: UEP
+      linkSprite: { sprite: Structures/Power/Cables/hv_cable.rsi, state: hvcable_3 }
+
+- type: entity
+  id: UEPTetherStub
+  save: false
+
+- type: entity
+  parent: [BaseUniversalElasticPort, BaseMachinePowered]
+  id: UniversalElasticPortMachine
+  name: UEP (WIP)
+  components:
+  - type: ApcPowerReceiver
+    powerLoad: 0
+    needsPower: false
+  - type: Sprite
+    sprite: Structures/Piping/Atmospherics/miners.rsi
+    state: miner
+    drawdepth: Overdoors
